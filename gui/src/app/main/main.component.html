@@ -1,4 +1,11 @@
 <div class="container">
-    <canvas #canvas width="600" height="300" (mousedown)="mouseDownCanvas($event)" (mousemove)="mouseMoveCanvas($event)"
-        (mouseup)="mouseUpCanvas($event)"></canvas>
+    <canvas id="canvas" width="800" height="500"></canvas>
+    <div class="buttons">
+        <button mat-fab color="primary" (click)="save()">
+            <mat-icon>save_alt</mat-icon>
+        </button>
+        <button mat-fab color="warn" (click)="clear()">
+            <mat-icon>delete</mat-icon>
+        </button>
+    </div>
 </div>

@@ -1,53 +1,51 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { fabric } from 'fabric';
+import { CanvasService } from '../canvas.service';
 
 @Component({
   selector: 'app-main',
   templateUrl: './main.component.html',
   styleUrls: ['./main.component.css']
 })
-export class MainComponent implements OnInit {
-  @ViewChild('canvas', { static: true }) canvas: ElementRef<HTMLCanvasElement> | null = null;
-  ctx: CanvasRenderingContext2D | null | undefined = null;
-  isDrawing = false;
-  x = 0;
-  y = 0;
+export class MainComponent implements OnInit, OnDestroy {
+  canvas: any;
+  intervalId: any;
+  storageKey = "canvas";
 
-  constructor() { }
+  constructor(private canvasService: CanvasService) { }
 
   ngOnInit(): void {
-    this.ctx = this.canvas?.nativeElement.getContext('2d');
+    this.canvas = new fabric.Canvas("canvas", {
+      isDrawingMode: true,
+    });
+    fabric.Object.prototype.transparentCorners = false;
+    this.canvas.freeDrawingBrush.color = "white";
+    this.canvas.freeDrawingBrush.width = 1;
+    this.canvas.renderAll();
+
+    setTimeout(() => {
+      this.canvas.loadFromJSON(localStorage.getItem(this.storageKey));
+      this.intervalId = setInterval(() => this.persistCanvas(), 1000);
+    }, 1);
   }
 
-  mouseDownCanvas(e: MouseEvent) {
-    this.x = e.offsetX;
-    this.y = e.offsetY;
-    this.isDrawing = true;
+  ngOnDestroy() {
+    clearInterval(this.intervalId);
   }
 
-  mouseMoveCanvas(e: MouseEvent) {
-    if (!this.isDrawing) return;
-    this.drawLine(this.x, this.y, e.offsetX, e.offsetY);
-    this.x = e.offsetX;
-    this.y = e.offsetY;
+  persistCanvas() {
+    localStorage.setItem(this.storageKey, this.serializeCanvas());
   }
 
-  mouseUpCanvas(e: MouseEvent) {
-    if (!this.isDrawing) return;
-    this.drawLine(this.x, this.y, e.offsetX, e.offsetY);
-    this.x = 0;
-    this.y = 0;
-    this.isDrawing = false;
+  save() {
+    this.canvasService.postCanvas(this.serializeCanvas()).subscribe();
   }
 
-  drawLine(x1: number, y1: number, x2: number, y2: number) {
-    if (!this.ctx) return;
+  clear() {
+    this.canvas.clear();
+  }
 
-    this.ctx.beginPath();
-    this.ctx.lineWidth = 3;
-    this.ctx.strokeStyle = 'white';
-    this.ctx.moveTo(x1, y1);
-    this.ctx.lineTo(x2, y2);
-    this.ctx.stroke();
-    this.ctx.closePath();
+  serializeCanvas(): string {
+    return JSON.stringify(this.canvas);
   }
 }

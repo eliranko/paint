@@ -5,3 +5,11 @@
 canvas {
     border: 1px solid white;
 }
+
+.buttons {
+    margin: 10px;
+}
+
+.buttons button {
+    margin-left: 10px;
+}
