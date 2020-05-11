@@ -2,15 +2,37 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, retry } from 'rxjs/operators';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Canvas } from './models/Canvas';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CanvasService {
+  private canvasUpdateSource = new BehaviorSubject('');
+  public currentCanvas = this.canvasUpdateSource.asObservable();
 
   constructor(private http: HttpClient) { }
 
-  postCanvas(canvas: string): Observable<void> {
+  updateCanvas(uuid: string) {
+    this.canvasUpdateSource.next(uuid);
+  }
+
+  getCanvases(): Observable<Canvas[]> {
+    return this.http.get<Canvas[]>("api/canvas").pipe(
+      retry(3),
+      catchError(this.handleError)
+    );
+  }
+
+  getCanvas(uuid: string): Observable<Canvas> {
+    return this.http.get<Canvas>("api/canvas/" + uuid).pipe(
+      retry(3),
+      catchError(this.handleError)
+    );
+  }
+
+  postCanvas(canvas: Canvas): Observable<void> {
     return this.http.post<void>("api/canvas", canvas).pipe(
       retry(3),
       catchError(this.handleError)

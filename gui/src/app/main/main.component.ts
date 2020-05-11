@@ -1,6 +1,10 @@
 import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { fabric } from 'fabric';
 import { CanvasService } from '../canvas.service';
+import { MatDialog } from '@angular/material/dialog';
+import { SaveCanvasComponent } from '../save-canvas/save-canvas.component';
+import { Canvas } from '../models/Canvas';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-main',
@@ -11,8 +15,10 @@ export class MainComponent implements OnInit, OnDestroy {
   canvas: any;
   intervalId: any;
   storageKey = "canvas";
+  subscriptions: Subscription[] = [];
 
-  constructor(private canvasService: CanvasService) { }
+  constructor(private canvasService: CanvasService,
+    public dialog: MatDialog) { }
 
   ngOnInit(): void {
     this.canvas = new fabric.Canvas("canvas", {
@@ -27,10 +33,18 @@ export class MainComponent implements OnInit, OnDestroy {
       this.canvas.loadFromJSON(localStorage.getItem(this.storageKey));
       this.intervalId = setInterval(() => this.persistCanvas(), 1000);
     }, 1);
+
+    this.subscriptions.push(this.canvasService.currentCanvas.subscribe(this.listenCanvasUpdates.bind(this)));
   }
 
   ngOnDestroy() {
     clearInterval(this.intervalId);
+  }
+
+  listenCanvasUpdates(uuid: string) {
+    if (!uuid) return;
+
+    this.canvasService.getCanvas(uuid).subscribe(canvas => this.canvas.loadFromJSON(canvas.data));
   }
 
   persistCanvas() {
@@ -38,7 +52,15 @@ export class MainComponent implements OnInit, OnDestroy {
   }
 
   save() {
-    this.canvasService.postCanvas(this.serializeCanvas()).subscribe();
+    let dialog = this.dialog.open(SaveCanvasComponent, {
+      width: '400px',
+    });
+    dialog.afterClosed().subscribe(name => { //unsubscribe?
+      if (!name) return;
+
+      this.canvasService.postCanvas(new Canvas(name, this.serializeCanvas())).subscribe();
+      this.clear();
+    });
   }
 
   clear() {

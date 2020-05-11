@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { CanvasService } from '../canvas.service';
+import { Canvas } from '../models/Canvas';
 
 @Component({
   selector: 'app-sidenav',
@@ -6,10 +8,16 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./sidenav.component.css']
 })
 export class SidenavComponent implements OnInit {
-
-  constructor() { }
+  canvases: Canvas[] = [];
+  constructor(private canvasService: CanvasService) { }
 
   ngOnInit(): void {
+    this.canvasService.getCanvases().subscribe(canvases => {
+      this.canvases = canvases;
+    });
   }
 
+  onCanvasClick(uuid: string) {
+    this.canvasService.updateCanvas(uuid);
+  }
 }

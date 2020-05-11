@@ -12,13 +12,20 @@ import { SidenavComponent } from './sidenav/sidenav.component';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { HttpClientModule } from '@angular/common/http';
+import { MatDialogModule } from '@angular/material/dialog';
+import { SaveCanvasComponent } from './save-canvas/save-canvas.component';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatListModule } from '@angular/material/list';
 
 @NgModule({
   declarations: [
     AppComponent,
     ToolbarComponent,
     MainComponent,
-    SidenavComponent
+    SidenavComponent,
+    SaveCanvasComponent
   ],
   imports: [
     BrowserModule,
@@ -28,9 +35,18 @@ import { HttpClientModule } from '@angular/common/http';
     MatSidenavModule,
     MatButtonModule,
     MatIconModule,
-    HttpClientModule
+    HttpClientModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatListModule
   ],
   providers: [],
+  entryComponents: [
+    SaveCanvasComponent
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
