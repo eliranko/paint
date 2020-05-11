@@ -9,6 +9,8 @@ import { Canvas } from '../models/Canvas';
 })
 export class SidenavComponent implements OnInit {
   canvases: Canvas[] = [];
+  currentCanvas: string = "";
+
   constructor(private canvasService: CanvasService) { }
 
   ngOnInit(): void {
@@ -18,6 +20,7 @@ export class SidenavComponent implements OnInit {
   }
 
   onCanvasClick(uuid: string) {
+    this.currentCanvas = uuid;
     this.canvasService.updateCanvas(uuid);
   }
 }

@@ -1,4 +1,5 @@
 export class Canvas {
+    uuid: string = "";
     name: string;
     data: string;
 

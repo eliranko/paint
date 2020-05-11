@@ -1,3 +1,7 @@
-<mat-list>
-    <a mat-list-item (click)="onCanvasClick(canvas.uuid)" *ngFor="let canvas of canvases"> {{ canvas.name }} </a>
-</mat-list>
+<div class="container">
+    <h3>Previous drawings</h3>
+    <mat-action-list>
+        <a mat-list-item (click)="onCanvasClick(canvas.uuid)" *ngFor="let canvas of canvases"
+            [class.marked]="canvas.uuid == currentCanvas"> {{ canvas.name }} </a>
+    </mat-action-list>
+</div>
