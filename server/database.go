@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -17,27 +18,37 @@ var connectedToMongo = make(chan struct{})
 var collection *mongo.Collection
 
 func startDb() {
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-
+	client, err := mongo.NewClient(options.Client().ApplyURI(viper.GetString("mongoUrl")))
 	if err != nil {
+		log.Panic(err)
+	}
+
+	timeout := 30 * time.Second
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	if err = client.Connect(ctx); err != nil {
 		log.Println(err)
 		return
 	}
 
-	ctx, _ = context.WithTimeout(context.Background(), time.Second)
-	for client.Ping(ctx, readpref.Primary()) != nil {
-		time.Sleep(time.Second)
+	ctx, _ = context.WithTimeout(context.Background(), timeout)
+	if err = client.Ping(ctx, readpref.Primary()); err != nil {
+		log.Println(err)
+		return
 	}
 
+	log.Println("Connected to db at ", viper.GetString("mongoUrl"))
 	collection = client.Database(viper.GetString("mongoDbName")).Collection(viper.GetString("mongoCollectionName"))
 	close(connectedToMongo)
 }
 
-func getCanvases() ([]*Canvas, error) {
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	cur, err := collection.Find(ctx, bson.D{}, options.Find().SetProjection(bson.M{"name": 1, "uuid": 1}))
+func getCanvases(ctx context.Context) ([]*Canvas, error) {
+	select {
+	case <-connectedToMongo:
+	case <-ctx.Done():
+		return nil, errors.New("not connected to db")
+	}
 
+	cur, err := collection.Find(ctx, bson.D{}, options.Find().SetProjection(bson.M{"name": 1, "uuid": 1}))
 	if err != nil {
 		log.Println("Failed reading collection ", err)
 		return nil, err
@@ -50,9 +61,14 @@ func getCanvases() ([]*Canvas, error) {
 	return *res, nil
 }
 
-func getCanvas(uuid string) (*Canvas, error) {
+func getCanvas(ctx context.Context, uuid string) (*Canvas, error) {
+	select {
+	case <-connectedToMongo:
+	case <-ctx.Done():
+		return nil, errors.New("not connected to db")
+	}
+
 	canvas := &Canvas{}
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	if err := collection.FindOne(ctx, bson.M{"uuid": uuid}).Decode(canvas); err != nil {
 		log.Println("failed decoding request ", err)
 		return nil, err
@@ -61,13 +77,12 @@ func getCanvas(uuid string) (*Canvas, error) {
 	return canvas, nil
 }
 
-func saveCanvas(canvas *Canvas) error {
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-	// buf, err := bson.Marshal(canvas)
-	// if err != nil {
-	// 	log.Println("failed marshaling canvas ", err)
-	// 	return err
-	// }
+func saveCanvas(ctx context.Context, canvas *Canvas) error {
+	select {
+	case <-connectedToMongo:
+	case <-ctx.Done():
+		return errors.New("not connected to db")
+	}
 
 	if _, err := collection.InsertOne(ctx, canvas); err != nil {
 		log.Println("could not persist canvas ", err)

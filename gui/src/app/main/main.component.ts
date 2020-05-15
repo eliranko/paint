@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { SaveCanvasComponent } from '../save-canvas/save-canvas.component';
 import { Canvas } from '../models/Canvas';
 import { Subscription } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-main',
@@ -18,7 +19,7 @@ export class MainComponent implements OnInit, OnDestroy {
   subscriptions: Subscription[] = [];
 
   constructor(private canvasService: CanvasService,
-    public dialog: MatDialog) { }
+    public dialog: MatDialog, private snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
     this.canvas = new fabric.Canvas("canvas", {
@@ -58,7 +59,10 @@ export class MainComponent implements OnInit, OnDestroy {
     dialog.afterClosed().subscribe(name => { //unsubscribe?
       if (!name) return;
 
-      this.canvasService.postCanvas(new Canvas(name, this.serializeCanvas())).subscribe();
+      this.canvasService.postCanvas(new Canvas(name, this.serializeCanvas())).subscribe(() => { },
+        () => {
+          this.snackBar.open("Server is unavailable at the moment");
+        });
       this.clear();
     });
   }

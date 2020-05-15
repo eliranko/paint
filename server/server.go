@@ -1,16 +1,20 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 )
+
+var httpTimeout = 5 * time.Second
 
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +24,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 }
 
 func handleGetCanvases(w http.ResponseWriter, r *http.Request) {
-	res, err := getCanvases()
+	ctx, _ := context.WithTimeout(context.Background(), httpTimeout)
+	res, err := getCanvases(ctx)
 	if err != nil {
 		log.Println("could not get canvases ", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -35,8 +40,9 @@ func handleGetCanvases(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetCanvas(w http.ResponseWriter, r *http.Request) {
+	ctx, _ := context.WithTimeout(context.Background(), httpTimeout)
 	id := mux.Vars(r)["id"]
-	canvas, err := getCanvas(id)
+	canvas, err := getCanvas(ctx, id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -61,7 +67,8 @@ func handleSaveCanvasRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	canvas.UUID = uuid.New().String()
-	if err = saveCanvas(canvas); err != nil {
+	ctx, _ := context.WithTimeout(context.Background(), httpTimeout)
+	if err = saveCanvas(ctx, canvas); err != nil {
 		log.Println("could not save canvas ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -74,8 +81,15 @@ func startServer() {
 	r.HandleFunc("/api/canvas", handleGetCanvases).Methods("GET")
 	r.HandleFunc("/api/canvas/{id}", handleGetCanvas).Methods("GET")
 	r.HandleFunc("/api/canvas", handleSaveCanvasRequest).Methods("POST")
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./dist/")))
 	r.Use(loggingMiddleware)
 
 	log.Println("listening on :", viper.GetString("port"))
-	log.Fatal(http.ListenAndServe("localhost:"+viper.GetString("port"), r))
+	srv := &http.Server{
+		Handler:      r,
+		Addr:         ":" + viper.GetString("port"),
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+	log.Fatal(srv.ListenAndServe())
 }
