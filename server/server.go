@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spf13/viper"
 
 	"github.com/gorilla/mux"
-	"github.com/spf13/viper"
 )
 
 var httpTimeout = 5 * time.Second
@@ -19,6 +19,16 @@ var httpTimeout = 5 * time.Second
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s", r.RequestURI, r.Method)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 		next.ServeHTTP(w, r)
 	})
 }
@@ -74,13 +84,18 @@ func handleSaveCanvasRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+
+	canvas.Data = ""
+	pushCanvases(canvas)
 }
 
 func startServer() {
 	r := mux.NewRouter()
+	r.Use(corsMiddleware)
 	r.HandleFunc("/api/canvas", handleGetCanvases).Methods("GET")
 	r.HandleFunc("/api/canvas/{id}", handleGetCanvas).Methods("GET")
 	r.HandleFunc("/api/canvas", handleSaveCanvasRequest).Methods("POST")
+	r.PathPrefix("/socket.io").Handler(getPushNotificationServer())
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./dist/")))
 	r.Use(loggingMiddleware)
 

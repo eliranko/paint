@@ -20,6 +20,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatListModule } from '@angular/material/list';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_SNACK_BAR_DEFAULT_OPTIONS } from '@angular/material/snack-bar';
+import { MainViewEncapsulatorComponent } from './main-view-encapsulator/main-view-encapsulator.component';
+import { NotFoundComponent } from './not-found/not-found.component';
+import { SocketIoModule } from 'ngx-socket-io';
 
 @NgModule({
   declarations: [
@@ -27,7 +30,9 @@ import { MAT_SNACK_BAR_DEFAULT_OPTIONS } from '@angular/material/snack-bar';
     ToolbarComponent,
     MainComponent,
     SidenavComponent,
-    SaveCanvasComponent
+    SaveCanvasComponent,
+    MainViewEncapsulatorComponent,
+    NotFoundComponent
   ],
   imports: [
     BrowserModule,
@@ -44,7 +49,8 @@ import { MAT_SNACK_BAR_DEFAULT_OPTIONS } from '@angular/material/snack-bar';
     FormsModule,
     ReactiveFormsModule,
     MatListModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    SocketIoModule.forRoot({ url: 'http://localhost:3000', options: {} })
   ],
   providers: [
     { provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: { duration: 5000 } }
