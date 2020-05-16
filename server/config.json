@@ -1,5 +1,5 @@
 {
-    "port": "3000",
+    "port": "80",
     "mongoUrl": "mongodb+srv://user:Aa123456@prospera-v8lui.mongodb.net/test?retryWrites=true&w=majority",
     "mongoDbName": "paint",
     "mongoCollectionName": "canvases"

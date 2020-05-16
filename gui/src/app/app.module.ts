@@ -50,7 +50,7 @@ import { SocketIoModule } from 'ngx-socket-io';
     ReactiveFormsModule,
     MatListModule,
     MatSnackBarModule,
-    SocketIoModule.forRoot({ url: 'http://localhost:3000', options: {} })
+    SocketIoModule.forRoot({ url: '/', options: {} })
   ],
   providers: [
     { provide: MAT_SNACK_BAR_DEFAULT_OPTIONS, useValue: { duration: 5000 } }
